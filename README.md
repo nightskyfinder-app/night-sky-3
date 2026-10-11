@@ -22,7 +22,7 @@ If you're stargazing outside, use your GitHub site. Use the Claude version for p
 
 ## New in version 3.1 (October 2026)
 
-- **Paths.** Tap anything and its path across the sky appears in gold: where a planet, the Moon or a star travels over 24 hours, a satellite's whole pass, or a plane's track. Keep it on screen with **Show path**, then drag around to follow it and tap a time to jump there.
+- **Paths.** Tap anything and its path across the sky appears in gold: where a planet, the Moon or a star travels over 24 hours, a satellite's whole pass, or a plane's track. Keep it on screen with **Show path**, then drag the object along its path to see where it will be at any time (the sky and clock follow), or tap a time to jump there.
 - **Real photos.** Planets, the Moon, the Sun, galaxies, nebulae, clusters and the space stations show a real photo on their card, from Wikipedia.
 
 ## New in version 3
@@ -111,8 +111,10 @@ While an info card is open, the object's path is drawn on the sky in gold. To ke
 
 1. Tap the object (or find it with Search and tap it).
 2. Tap **Show path** on its card.
-3. The card closes, the map swings around to show the path, and a gold bar at the top reads, for example, "Saturn path · 24 h". Drag and pinch to follow the path anywhere in the sky.
-4. Tap the × on the gold bar to hide the path. Tapping the name on the bar opens the card again.
+3. The card closes, the map swings around to show the path, and a gold bar at the top reads, for example, "Saturn path · 24 h". A dashed gold ring circles the object.
+4. **Drag the object along its path.** Put your finger on it (or anywhere on the gold line) and slide: the object follows the line, and the whole sky and the clock move with it, so you can watch it rise, climb and set. A label above it shows the time. Let go and the sky stays at that time; tap the clock, then **Now**, to come back.
+5. Drag anywhere else on the sky to look around as usual, and pinch to zoom.
+6. Tap the × on the gold bar to hide the path. Tapping the name on the bar opens the card again.
 
 What the path shows:
 
@@ -123,6 +125,8 @@ What the path shows:
 | Planes | Where it has flown since you turned Planes on, plus where it will be in the next 5 minutes if it holds its course | +1 min to +5 min |
 
 The line is brighter where the object is going and fainter where it has been. Below the horizon it's dashed (or hidden, if Ground is set to Solid). Plane paths ahead are dashed, because they're a guess.
+
+A day's path covers 24 hours at a time. Drag to one end, let go, and the path extends another 12 hours so you can keep going. A satellite's path covers just that one pass. Plane paths can't be dragged, because planes only show live.
 
 **Tap a time mark** (on a planet, star or satellite path) and the whole sky jumps to that moment, with the object sitting on that mark. The clock turns gold; tap it, then **Now**, to come back. This is a quick way to see, for example, how high Jupiter will be at midnight, or exactly where the ISS will appear.
 
@@ -295,6 +299,7 @@ If you had version 2 on your home screen, add version 3 as a new icon. Both can 
 | Planes say "Couldn't reach the plane relay" | Check the address in Layers matches your Cloudflare Worker, and open it in a browser to see that it's running. |
 | The weather panel says it couldn't get the forecast | You're offline, or Weather is off in Layers. Tap **Refresh** when you have a signal. |
 | A card shows a drawing, not a photo | Stars and constellations always use drawings. For others, you may be offline, or Wikipedia has no photo for it. Photos don't show in the Claude version. |
+| Dragging moves the whole sky instead of the object | Start the drag on the object's gold ring or on the gold line itself. The path must be showing (tap **Show path** on its card). |
 | I can't find the path after closing a card | Paths stay only after you tap **Show path**. Tap the name on the gold bar to reopen the card. |
 | The Tonight panel closed | Tap the star button in the right-hand column. |
 | I want to see the tour again | Tap **?**, then **Take the quick tour**. |

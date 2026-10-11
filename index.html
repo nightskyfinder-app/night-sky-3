@@ -63,6 +63,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .target .pname { width: auto; height: auto; min-width: 0; padding: 0; border-radius: 0; font: inherit; color: var(--fg); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .target .pname small { color: var(--muted); font-size: 12px; }
 .pathchip { border-color: rgba(242,196,109,0.3); }
+body.scrubbing .rail, body.scrubbing .bottom { opacity: 0.15; pointer-events: none; transition: opacity .2s; }
 body.chips2 .toast { top: calc(env(safe-area-inset-top, 0px) + 152px); }
 .target span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .target b { color: var(--accent); font-weight: 600; }
@@ -476,7 +477,8 @@ body.chips2 .toast { top: calc(env(safe-area-inset-top, 0px) + 152px); }
     </div></details>
     <details><summary>Paths: where things travel</summary><div class="body">
       <p>Tap anything and its <b>path</b> appears in gold while its card is open: a planet's or star's track across the sky over 24 hours, a satellite's whole pass, or a plane's track.</p>
-      <p>Tap <b>Show path</b> on the card to keep it on screen. Then drag and zoom to follow it. Dots mark the hours (minutes for satellites); <b>tap a time</b> to jump the sky there. The gold chip at the top hides it again.</p>
+      <p>Tap <b>Show path</b> on the card to keep it on screen. A gold ring circles the object: <b>drag the object along its path</b> (or touch anywhere on the gold line) and the sky and clock follow, so you can watch it rise, cross and set. Drag anywhere else to look around as usual.</p>
+      <p>Dots mark the hours (minutes for satellites); <b>tap a time</b> to jump there. The clock turns gold; tap it, then Now, to come back. The gold chip at the top hides the path.</p>
     </div></details>
     <details><summary>Photos</summary><div class="body">
       <p>Planets, the Moon, galaxies, nebulae, clusters and the space stations show a <b>real photo</b> on their card, from Wikipedia. Use <b>Photo</b> and <b>Drawing</b> under the picture to switch; the drawing of the Moon, Jupiter, Saturn, Venus and Mercury shows how they look right now.</p>
@@ -1749,6 +1751,7 @@ canvas.addEventListener("pointerdown", e => {
   moved = false; slew = null;
   if (e.pointerType !== "mouse") mouse = null;
   if (pointers.size === 1) dragStart = { x: e.clientX, y: e.clientY, az: view.az, alt: view.alt };
+  scrub = pointers.size === 1 ? scrubStart(e.clientX, e.clientY) : (endScrub(), null); // pressed on a pinned path's object or line?
   if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinchStart = { d: Math.hypot(a[0]-b[0], a[1]-b[1]), fov: view.fov }; }
   canvas.classList.add("dragging");
 });
@@ -1756,6 +1759,11 @@ canvas.addEventListener("pointermove", e => {
   if (!pointers.has(e.pointerId)) { if (e.pointerType === "mouse") mouse = { x: e.clientX, y: e.clientY }; return; }
   pointers.set(e.pointerId, [e.clientX, e.clientY]);
   if (pointers.size === 2 && pinchStart) { const [a, b] = [...pointers.values()]; setFov(pinchStart.fov * pinchStart.d / Math.hypot(a[0]-b[0], a[1]-b[1])); moved = true; return; }
+  if (scrub && dragStart) { // slide the object along its path: the sky and clock follow
+    if (!scrub.on && Math.abs(e.clientX - dragStart.x) + Math.abs(e.clientY - dragStart.y) > 5) { scrub.on = true; pathFrozen = true; playing = false; mouse = null; document.body.classList.add("scrubbing"); }
+    if (scrub.on) { moved = true; scrubTo(e.clientX, e.clientY); }
+    return;
+  }
   if (!dragStart || motionOn) return;
   const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
   if (Math.abs(dx) + Math.abs(dy) > 5) { moved = true; mouse = null; }
@@ -1770,7 +1778,7 @@ function endPointer(e) {
   pointers.delete(e.pointerId);
   if (pointers.size < 2) pinchStart = null;
   if (pointers.size === 1) { const [p] = [...pointers.values()]; dragStart = { x: p[0], y: p[1], az: view.az, alt: view.alt }; moved = true; }
-  if (pointers.size === 0) { dragStart = null; canvas.classList.remove("dragging"); }
+  if (pointers.size === 0) { dragStart = null; canvas.classList.remove("dragging"); endScrub(); }
   if (e.pointerType === "mouse") mouse = { x: e.clientX, y: e.clientY };
   if (wasTap && e.type === "pointerup") pick(e.clientX, e.clientY);
 }
@@ -2478,7 +2486,7 @@ function dayPath(item) {
     if (!v) { const eq = A.Equator(item.obj.body, A.MakeTime(new Date(ms)), observer, false, true); v = radecVec(eq.ra * 15, eq.dec); }
     pts.push({ h: trM(rotAt(ms), v), t: ms, tick: new Date(ms).getMinutes() === 0 });
   }
-  return { pts, kind: "day", note: "24 h · tap a time", jump: true, ok: ms => Math.floor((ms - 12 * 3600e3) / STEP) * STEP === t0 };
+  return { pts, kind: "day", note: "24 h · drag it along", jump: true, ok: ms => Math.floor((ms - 12 * 3600e3) / STEP) * STEP === t0 };
 }
 function satPath(s) {
   const from = nowDate().getTime(), STEP = 10e3, L0 = satLook(s, new Date(from));
@@ -2518,6 +2526,7 @@ function planePath(o) {
 function getPath(item) {
   const k = itemKey(item), ms = item.type === "plane" ? Date.now() : item.type === "sat" ? nowDate().getTime() : now.getTime();
   let p = pathStore.get(k);
+  if (p && pathFrozen && pathItem && k === itemKey(pathItem)) return p; // keep the same line while it's being dragged along
   if (p && p.place === placeKey() && (item.type === "body" || p.obj === item.obj) && p.ok(ms)) return p;
   try { p = item.type === "sat" ? (SATLIB ? satPath(item.obj) : null) : item.type === "plane" ? planePath(item.obj) : dayPath(item); } catch (e) { p = null; }
   if (!p) return null;
@@ -2584,6 +2593,23 @@ function drawPath(B, item, pinned) {
     lastLbl = pp;
     if (p.jump) pathHits.push({ x: pp[0], y: pp[1], lx, ly, t: q.t, txt });
   }
+  // a pinned path's object can be grabbed: a gold handle around it, and its time while it's being dragged
+  if (pinned && item.type !== "plane") {
+    const v = targetVec(item), o = v ? project(B, v) : null;
+    if (o && onScreen(o, 0) && (see || v[2] > -0.01)) {
+      const dragging = scrub && scrub.on;
+      ctx.setLineDash(dragging ? [] : [3, 4]); ctx.lineWidth = dragging ? 2 : 1.4;
+      ctx.strokeStyle = `rgba(242,196,109,${dragging ? 0.95 : 0.7})`;
+      ctx.beginPath(); ctx.arc(o[0], o[1], dragging ? 20 : 16, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+      if (dragging) {
+        const txt = fmtWhen(now); ctx.font = "600 13px " + FONT_UI; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        const w = ctx.measureText(txt).width + 18, x = clamp(o[0], w / 2 + 4, W - w / 2 - 4), y = o[1] - 42;
+        ctx.fillStyle = "rgba(12,16,31,0.92)"; ctx.strokeStyle = "rgba(242,196,109,0.7)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y - 13, w, 26, 13) : ctx.rect(x - w / 2, y - 13, w, 26); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#f2c46d"; ctx.fillText(txt, x, y + 1);
+      }
+    }
+  }
   ctx.restore();
 }
 function syncPathChip() {
@@ -2603,6 +2629,39 @@ function setPath(item) {
     const v = pathFocus(item);
     if (v) { const [az, alt] = toAzAlt(v); slew = { a0: view.az, l0: view.alt, f0: view.fov, da: wrap180(az - view.az), dl: clamp(alt, -20, 75) - view.alt, df: camOn ? 0 : Math.max(view.fov, item.type === "plane" ? 70 : 100) - view.fov, t0: performance.now(), dur: 900 }; }
   }
+}
+// drag along a pinned path: press on the object (or on the gold line) and slide; the time follows the finger
+let scrub = null, pathFrozen = false;
+function nearestOnPath(B, p, x, y) {
+  const see = seeThrough(), pr = p.pts.map(q => project(B, q.h)), maxL = Math.max(W, H) * 1.2;
+  let best = null;
+  for (let i = 0; i < pr.length - 1; i++) {
+    const a = pr[i], b = pr[i + 1];
+    if (!a || !b || (!see && p.pts[i].h[2] + p.pts[i + 1].h[2] < 0)) continue;
+    const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy;
+    if (L2 > maxL * maxL) continue;
+    const u = L2 > 0 ? clamp(((x - a[0]) * dx + (y - a[1]) * dy) / L2, 0, 1) : 0, d = Math.hypot(a[0] + u * dx - x, a[1] + u * dy - y);
+    if (!best || d < best.d) best = { d, t: p.pts[i].t + u * (p.pts[i + 1].t - p.pts[i].t) };
+  }
+  return best;
+}
+function scrubStart(x, y) {
+  if (!pathItem || pathItem.type === "plane" || !$("info").hidden || (pathItem.type === "sat" && !layers.sats)) return null;
+  const p = getPath(pathItem); if (!p || p.pts.length < 2) return null;
+  const B = basis(), v = targetVec(pathItem), o = v ? project(B, v) : null;
+  const onObj = o && Math.hypot(o[0] - x, o[1] - y) < 30, near = nearestOnPath(B, p, x, y);
+  return onObj || (near && near.d < 16) ? { on: false } : null;
+}
+function scrubTo(x, y) {
+  const p = getPath(pathItem); if (!p) return;
+  const r = nearestOnPath(basis(), p, x, y); if (!r) return;
+  const step = p.kind === "pass" ? 1000 : 60000; // whole minutes (seconds for satellites) so the clock reads cleanly
+  setOffset(Math.round(r.t / step) * step - Date.now());
+}
+function endScrub() {
+  if (!scrub) return;
+  const was = scrub.on; scrub = null; pathFrozen = false; document.body.classList.remove("scrubbing");
+  if (was) toast("Sky at " + fmtWhen(now) + ". Tap the clock, then Now, to come back.", 3500);
 }
 function pathTap(x, y) {
   for (const h of pathHits) {
