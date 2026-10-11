@@ -14,10 +14,16 @@ It runs in two places. Everything on the map works in both, but phone features a
 | Point your phone at the sky, camera view | No, drag instead | Yes |
 | GPS location | No, pick a city | Yes |
 | Satellites, weather and planes | No | Yes |
+| Real photos on info cards | No, drawings only | Yes |
 | Works with no signal | No | Yes, after first visit |
 | Home-screen icon | No | Yes |
 
 If you're stargazing outside, use your GitHub site. Use the Claude version for planning at a desk.
+
+## New in version 3.1 (October 2026)
+
+- **Paths.** Tap anything and its path across the sky appears in gold: where a planet, the Moon or a star travels over 24 hours, a satellite's whole pass, or a plane's track. Keep it on screen with **Show path**, then drag around to follow it and tap a time to jump there.
+- **Real photos.** Planets, the Moon, the Sun, galaxies, nebulae, clusters and the space stations show a real photo on their card, from Wikipedia.
 
 ## New in version 3
 
@@ -88,15 +94,46 @@ When the object is off screen, a gold arrow at the edge points the way, labeled 
 
 Tap any star, planet, galaxy, cluster, constellation name, satellite or plane and a card slides up. It shows:
 
-- A picture: the Moon's actual phase, Jupiter's four moons where they really are tonight, Saturn's real ring tilt, a constellation's figure, or a drawing of a galaxy, nebula, satellite or plane.
+- A picture. Planets, the Moon, the Sun, galaxies, nebulae, clusters, meteor showers and the space stations show a **real photo** (see Photos below). Use **Photo** and **Drawing** under the picture to switch. The drawings show the Moon's actual phase, Jupiter's four moons where they really are tonight, Saturn's real ring tilt and the phase of Venus and Mercury (that button reads **Now**), a constellation's figure, or a galaxy, nebula, satellite or plane.
 - Where it is, when it rises and sets (or a satellite's next visible pass), how bright it is, and how far away.
 - A short note, including whether you'll need binoculars or a telescope.
 - **Point me there**, which starts the gold finder.
+- **Show path**, which keeps the object's path on screen (see Paths below). On satellite cards it reads **Show its pass**.
 - **About \[constellation\]** on star cards, which opens that constellation's story.
 - **Use it to fix direction** on the Moon, bright planets and bright stars, when phone pointing is on (see Phone tips).
 - **Read more on Wikipedia**, or satellite details on Heavens-Above, or the plane on a live flight map.
 
 Tap the × or anywhere on empty sky to close the card.
+
+## Paths: where things travel
+
+While an info card is open, the object's path is drawn on the sky in gold. To keep it there after the card closes:
+
+1. Tap the object (or find it with Search and tap it).
+2. Tap **Show path** on its card.
+3. The card closes, the map swings around to show the path, and a gold bar at the top reads, for example, "Saturn path · 24 h". Drag and pinch to follow the path anywhere in the sky.
+4. Tap the × on the gold bar to hide the path. Tapping the name on the bar opens the card again.
+
+What the path shows:
+
+| Object | Path | Time marks |
+| --- | --- | --- |
+| Sun, Moon, planets, stars, galaxies, constellations | Where it goes across your sky from 12 hours ago to 12 hours ahead | A dot every hour, labeled 9 PM, 10 PM… |
+| Satellites and space stations | The whole pass it's on now, from where it rises to where it sets; if it's below the horizon, its next pass (its next visible one, if there is one in the next 36 hours) | A dot every minute |
+| Planes | Where it has flown since you turned Planes on, plus where it will be in the next 5 minutes if it holds its course | +1 min to +5 min |
+
+The line is brighter where the object is going and fainter where it has been. Below the horizon it's dashed (or hidden, if Ground is set to Solid). Plane paths ahead are dashed, because they're a guess.
+
+**Tap a time mark** (on a planet, star or satellite path) and the whole sky jumps to that moment, with the object sitting on that mark. The clock turns gold; tap it, then **Now**, to come back. This is a quick way to see, for example, how high Jupiter will be at midnight, or exactly where the ISS will appear.
+
+## Photos
+
+Info cards for planets, the Moon, the Sun, the Messier objects and other galaxies, nebulae and clusters, meteor showers, and the ISS, Tiangong and Hubble show a real photo: the main picture from that object's Wikipedia article. The line under the photo credits the photographer and its license, with a link to the photo's page on Wikimedia Commons.
+
+- Stars and constellations keep their drawings, because their Wikipedia pictures are mostly star charts. A few well-known stars, such as Canopus, have a real photo.
+- Ordinary satellites and planes have no photo.
+- Photos need a signal the first time. The app keeps the last 120 photos you've looked at, so they still show with no signal.
+- The photos are as good as Wikipedia's. Many come from the Hubble and Webb telescopes or NASA probes; their colors and detail are far beyond what you'll see through a backyard telescope, where most galaxies look like faint gray smudges.
 
 ## Tonight
 
@@ -236,6 +273,7 @@ If you had version 2 on your home screen, add version 3 as a new icon. Both can 
 - **Weather** sends your location rounded to a tenth of a degree (a few miles) to Open-Meteo.
 - **Planes** send the same rounded location to your own Cloudflare relay, which passes it to the flight-data service.
 - **Satellites** don't send any location: everyone downloads the same orbit file.
+- **Photos** ask Wikipedia for the object's name only (for example, "Messier 42"), never your location.
 - There's no account and nothing is tied to your name. Like any website, these services can see your internet address.
 - Turn Weather or Planes off in Layers to stop sending anything.
 
@@ -256,6 +294,8 @@ If you had version 2 on your home screen, add version 3 as a new icon. Both can 
 | Planes say "Needs a one-time setup" | Follow the setup steps under Planes, then paste the address in Layers. |
 | Planes say "Couldn't reach the plane relay" | Check the address in Layers matches your Cloudflare Worker, and open it in a browser to see that it's running. |
 | The weather panel says it couldn't get the forecast | You're offline, or Weather is off in Layers. Tap **Refresh** when you have a signal. |
+| A card shows a drawing, not a photo | Stars and constellations always use drawings. For others, you may be offline, or Wikipedia has no photo for it. Photos don't show in the Claude version. |
+| I can't find the path after closing a card | Paths stay only after you tap **Show path**. Tap the name on the gold bar to reopen the card. |
 | The Tonight panel closed | Tap the star button in the right-hand column. |
 | I want to see the tour again | Tap **?**, then **Take the quick tour**. |
 | The site shows the old version | Close the app or tab completely and reopen it. |

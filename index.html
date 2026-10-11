@@ -57,7 +57,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .rail .round svg { width: 19px; height: 19px; }
 .round[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
-.target { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 62px); display: inline-flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid rgba(242,196,109,0.45); border-radius: 999px; padding: 4px 4px 4px 14px; font: 500 13px/1 var(--font-ui); max-width: calc(100vw - 132px); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.chips { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 62px); display: flex; flex-direction: column; align-items: center; gap: 6px; width: max-content; max-width: calc(100vw - 132px); pointer-events: none; }
+.chips > * { pointer-events: auto; min-width: 0; }
+.target { display: inline-flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid rgba(242,196,109,0.45); border-radius: 999px; padding: 4px 4px 4px 14px; font: 500 13px/1 var(--font-ui); max-width: 100%; box-sizing: border-box; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.target .pname { width: auto; height: auto; min-width: 0; padding: 0; border-radius: 0; font: inherit; color: var(--fg); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.target .pname small { color: var(--muted); font-size: 12px; }
+.pathchip { border-color: rgba(242,196,109,0.3); }
+body.chips2 .toast { top: calc(env(safe-area-inset-top, 0px) + 152px); }
 .target span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .target b { color: var(--accent); font-weight: 600; }
 .target button { background: none; border: 0; color: var(--muted); font-size: 20px; line-height: 1; width: 30px; height: 30px; cursor: pointer; border-radius: 50%; flex: none; }
@@ -79,6 +85,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .art { margin-top: 14px; border-radius: 12px; overflow: hidden; background: #02030a; border: 1px solid var(--line); }
 .art canvas { display: block; width: 100%; height: 150px; }
 .art .cap { font: 400 11px/1 var(--font-data); color: var(--muted); letter-spacing: 0.08em; padding: 7px 10px; border-top: 1px solid var(--line); }
+/* v3.1: real photos on info cards */
+.art img { display: block; width: 100%; height: 190px; object-fit: contain; background: #000; }
+.art.photo canvas, .art:not(.photo) img { display: none; }
+.art .caprow { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--line); padding: 4px 6px 4px 10px; min-height: 30px; box-sizing: border-box; }
+.art .caprow .cap { border-top: 0; padding: 3px 0; line-height: 1.35; min-width: 0; overflow-wrap: anywhere; }
+.art .cap a { color: var(--muted); text-decoration: underline; text-decoration-color: rgba(139,148,182,0.4); }
+.art .seg button { padding: 6px 9px; font-size: 12px; }
 .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; margin: 16px 0 0; }
 .facts div { min-width: 0; }
 .facts dt { font: 500 11px/1 var(--font-data); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 5px; }
@@ -243,7 +256,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 </div>
 <div class="calib" id="calib" hidden><p id="calibText"></p><div class="btns"><button class="btn" type="button" id="calibOk">Lined up</button><button class="btn ghost" type="button" id="calibCancel">Cancel</button></div></div>
 
-<div class="target" id="targetChip" hidden><span>Finding <b id="targetName"></b> <span id="targetSep"></span></span><button type="button" id="targetClear" aria-label="Stop finding">×</button></div>
+<div class="chips" id="chips">
+  <div class="target" id="targetChip" hidden><span>Finding <b id="targetName"></b> <span id="targetSep"></span></span><button type="button" id="targetClear" aria-label="Stop finding">×</button></div>
+  <div class="target pathchip" id="pathChip" hidden><button type="button" class="pname" id="pathOpen" aria-label="Open details"><b id="pathName"></b> <small id="pathWhen"></small></button><button type="button" id="pathClear" aria-label="Hide path">×</button></div>
+</div>
 <div class="toast" id="toast" hidden></div>
 <button class="hoverchip" id="hoverChip" type="button" hidden><span id="hoverName"></span><span aria-hidden="true">›</span></button>
 
@@ -275,11 +291,16 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
     </div>
     <button class="close" type="button" data-close aria-label="Close details">×</button>
   </header>
-  <div class="art" id="infoArtBox"><canvas id="infoArt"></canvas><div class="cap" id="infoArtCap">Illustration</div></div>
+  <div class="art" id="infoArtBox"><img id="infoPhoto" alt="" crossorigin="anonymous" referrerpolicy="no-referrer"><canvas id="infoArt"></canvas>
+    <div class="caprow"><div class="cap" id="infoArtCap">Illustration</div>
+      <div class="seg" role="group" aria-label="Picture" id="artSeg" hidden><button type="button" id="artPhotoBtn">Photo</button><button type="button" id="artDrawBtn">Drawing</button></div>
+    </div>
+  </div>
   <dl class="facts" id="infoFacts"></dl>
   <p class="note" id="infoNote"></p>
   <div class="actions">
     <button class="btn" type="button" id="infoFind">Point me there</button>
+    <button class="btn ghost" type="button" id="infoPath">Show path</button>
     <button class="btn ghost" type="button" id="infoCons" hidden></button>
     <button class="btn ghost" type="button" id="infoCal" hidden>Use it to fix direction</button>
     <a class="link" id="infoLink" href="#" target="_blank" rel="noopener">Read more on Wikipedia ↗</a>
@@ -453,6 +474,14 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
       <p><b>Search</b> (magnifier) finds planets, stars, constellations, galaxies and satellites like the ISS. Pick one and a gold arrow at the edge of the screen leads you to it.</p>
       <p><b>Tonight</b> (star) lists what's worth seeing: the Moon, planets, space station passes, meteor showers and the best deep-sky sights.</p>
     </div></details>
+    <details><summary>Paths: where things travel</summary><div class="body">
+      <p>Tap anything and its <b>path</b> appears in gold while its card is open: a planet's or star's track across the sky over 24 hours, a satellite's whole pass, or a plane's track.</p>
+      <p>Tap <b>Show path</b> on the card to keep it on screen. Then drag and zoom to follow it. Dots mark the hours (minutes for satellites); <b>tap a time</b> to jump the sky there. The gold chip at the top hides it again.</p>
+    </div></details>
+    <details><summary>Photos</summary><div class="body">
+      <p>Planets, the Moon, galaxies, nebulae, clusters and the space stations show a <b>real photo</b> on their card, from Wikipedia. Use <b>Photo</b> and <b>Drawing</b> under the picture to switch; the drawing of the Moon, Jupiter, Saturn, Venus and Mercury shows how they look right now.</p>
+      <p>Photos need a connection the first time; ones you've seen are kept for offline use.</p>
+    </div></details>
     <details><summary>Weather and stargazing rating</summary><div class="body">
       <p>The <b>cloud button</b> shows current weather and an hour-by-hour stargazing rating for tonight. Its dot is the rating: green is great, yellow is fair, red is poor.</p>
     </div></details>
@@ -478,7 +507,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
       <p>Add the app to your home screen and it works with no signal. Satellites, planes and weather need a connection now and then.</p>
     </div></details>
     <details><summary>Privacy</summary><div class="body">
-      <p>Your exact location stays on your phone. Weather and planes send only a rough position, rounded to a few miles. Satellite data doesn't send any location. Nothing is tied to your name, and the app has no account.</p>
+      <p>Your exact location stays on your phone. Weather and planes send only a rough position, rounded to a few miles. Satellite data doesn't send any location. Photos ask Wikipedia only for the object's name. Nothing is tied to your name, and the app has no account.</p>
     </div></details>
   </div>
 </section>
@@ -847,7 +876,7 @@ function targetName(t) {
   return t.obj.name || starDesig(t.obj) || "Star";
 }
 function setTarget(t, opts) {
-  target = t; $("targetChip").hidden = !t;
+  target = t; $("targetChip").hidden = !t; syncPathChip();
   if (!t) return;
   $("targetName").textContent = targetName(t);
   const v = targetVec(t);
@@ -1091,6 +1120,13 @@ function draw(ts) {
   drawSats(B, sunAlt, tNow);
   drawPlanes(B, sunAlt);
   drawGround(B, haze);
+  pathHits = [];
+  if (pathItem) {
+    drawPath(B, pathItem, true);
+    const pp = getPath(pathItem), w = pp ? "· " + pp.note : "";
+    if ($("pathWhen").textContent !== w) $("pathWhen").textContent = w;
+  }
+  if (selected && !$("info").hidden && !(pathItem && itemKey(selected) === itemKey(pathItem))) drawPath(B, selected, false);
   drawLabels();
   hover = findHover();
   drawHover(B);
@@ -1476,10 +1512,81 @@ function showInfo(item) {
   $("infoCons").hidden = !consBtn;
   if (consBtn) { $("infoCons").textContent = "About " + consBtn.name; $("infoCons").onclick = () => showInfo({ type: "cons", obj: consBtn }); }
   $("infoFind").onclick = () => { const t = selected; closeSheets(); setTarget(t); };
-  $("infoArtCap").textContent = cap;
+  const pinned = pathItem && itemKey(pathItem) === itemKey(item);
+  $("infoPath").textContent = pinned ? "Hide path" : item.type === "sat" ? "Show its pass" : "Show path";
+  $("infoPath").onclick = () => { const t = selected; closeSheets(); setPath(pinned ? null : t); };
+  artCap = cap;
   openSheet("info"); selected = item;
+  showPhoto(item, name);
   requestAnimationFrame(() => drawArt($("infoArt"), item));
 }
+
+/* ---------- real photos (lead picture of the object's Wikipedia article, from Wikimedia Commons) ---------- */
+// Only the object's name goes to Wikipedia. Answers are kept 30 days in localStorage (sky.photos); the images themselves are
+// kept by the service worker for offline use. Pages whose lead picture is a map, chart or diagram (most stars, all constellations)
+// keep the drawing instead.
+const WIKI_API = "https://en.wikipedia.org/w/api.php?format=json&formatversion=2&origin=*&";
+const PHOTO_SKIP = /\.svg$|map|chart|diagram|locat|position|IAU|orbit|symbol|logo|comparison|size|finder|radiant|kstars|stellarium/i;
+const PHOTO_TITLE = { "Cr 140": "Collinder 140", "Brocchi's Cluster (Coathanger)": "Brocchi's Cluster", Hyades: "Hyades (star cluster)", "Rosette Cluster": "Rosette Nebula", "Southern Beehive": "NGC 2516" };
+const LIVE_ART = { Moon: 1, Jupiter: 1, Saturn: 1, Venus: 1, Mercury: 1 }; // drawings that show how it looks right now
+const SAT_WIKI = { 25544: "International Space Station", 48274: "Tiangong space station", 20580: "Hubble Space Telescope" };
+let photoCache = load("sky.photos") || {}, photoReq = 0, artCap = "";
+function photoTitle(item) {
+  if (item.type === "body") return [WIKI[item.obj.body] || item.obj.body];
+  if (item.type === "dso") { const d = item.obj, t = /^M\d+$/.test(d.code) ? "Messier " + d.code.slice(1) : d.name || d.code; return [PHOTO_TITLE[t] || t]; }
+  if (item.type === "star") return item.obj.name ? [item.obj.name + " (star)", item.obj.name] : null; // star names are often other words too
+  if (item.type === "sat") return SAT_WIKI[item.obj.id] ? [SAT_WIKI[item.obj.id]] : null;
+  if (item.type === "point") return item.obj.wiki ? [item.obj.wiki] : null;
+  return null; // constellations: the figure drawing is clearer than any photo; planes: no free photos
+}
+const htmlText = html => new DOMParser().parseFromString(String(html || ""), "text/html").body.textContent.replace(/\s+/g, " ").trim();
+async function wikiQuery(params) { const r = await fetch(WIKI_API + new URLSearchParams(params)); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }
+async function fetchPhoto(title, alt, star) {
+  const j = await wikiQuery({ action: "query", titles: title, redirects: 1, prop: "pageimages|pageprops|description", piprop: "name|thumbnail", pithumbsize: 500, ppprop: "disambiguation" });
+  const pg = j.query && j.query.pages && j.query.pages[0];
+  if (!pg || pg.missing || (pg.pageprops && "disambiguation" in pg.pageprops)) return alt ? fetchPhoto(alt, null, star) : null;
+  if (star && !/star|binary|variable|giant|dwarf|cluster|system|asterism/i.test(pg.description || "")) return null; // "Seat" or "Yen" is a star name, but not that page
+  if (!pg.pageimage || !pg.thumbnail || PHOTO_SKIP.test(pg.pageimage)) return null;
+  let ii = null;
+  try { const k = await wikiQuery({ action: "query", titles: "File:" + pg.pageimage, prop: "imageinfo", iiprop: "url|extmetadata", iiextmetadatafilter: "Artist|LicenseShortName" }); ii = k.query.pages[0].imageinfo[0]; } catch (e) {}
+  const m = (ii && ii.extmetadata) || {};
+  return { src: pg.thumbnail.source, by: htmlText(m.Artist && m.Artist.value), lic: htmlText(m.LicenseShortName && m.LicenseShortName.value),
+    link: (ii && ii.descriptionurl) || "https://commons.wikimedia.org/wiki/File:" + encodeURIComponent(pg.pageimage) };
+}
+async function photoFor(item) {
+  const titles = photoTitle(item); if (!titles) return null;
+  const key = titles[0], c = photoCache[key];
+  if (c && Date.now() - c.t < 30 * 864e5) return c.v;
+  const v = await fetchPhoto(titles[0], titles[1], item.type === "star");
+  photoCache[key] = { v, t: Date.now() };
+  const keys = Object.keys(photoCache); if (keys.length > 400) delete photoCache[keys[0]];
+  store("sky.photos", photoCache);
+  return v;
+}
+function setArtMode(mode, redraw) {
+  const box = $("infoArtBox"), ph = box._photo, photo = mode === "photo" && !!ph;
+  box.classList.toggle("photo", photo);
+  $("artPhotoBtn").setAttribute("aria-pressed", String(photo)); $("artDrawBtn").setAttribute("aria-pressed", String(!photo));
+  const cap = $("infoArtCap"); cap.textContent = "";
+  if (!photo) { cap.textContent = artCap; if (redraw && selected) { const it = selected; requestAnimationFrame(() => drawArt($("infoArt"), it)); } return; }
+  const by = ph.by.length > 70 ? ph.by.slice(0, 68) + "…" : ph.by;
+  cap.append("Photo" + (by ? ": " + by : "") + (ph.lic ? " · " + ph.lic : "") + " · ");
+  const a = document.createElement("a"); a.href = ph.link; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Wikimedia Commons"; cap.append(a);
+}
+async function showPhoto(item, name) {
+  const box = $("infoArtBox"), img = $("infoPhoto"), req = ++photoReq;
+  box._photo = null; $("artSeg").hidden = true; img.removeAttribute("src"); setArtMode("drawing");
+  if (!SITE_BUILD) return; // Claude's viewer blocks outside requests
+  let ph = null; try { ph = await photoFor(item); } catch (e) { return; }
+  if (!ph || req !== photoReq) return;
+  $("artDrawBtn").textContent = item.type === "body" && LIVE_ART[item.obj.body] ? "Now" : "Drawing";
+  let retried = false;
+  img.onload = () => { if (req !== photoReq) return; box._photo = ph; $("artSeg").hidden = false; setArtMode("photo"); };
+  img.onerror = () => { if (req !== photoReq || retried) return; retried = true; img.removeAttribute("crossorigin"); img.src = ph.src; };
+  img.setAttribute("crossorigin", "anonymous"); img.alt = "Photo of " + name; img.src = ph.src;
+}
+$("artPhotoBtn").onclick = () => setArtMode("photo");
+$("artDrawBtn").onclick = () => setArtMode("drawing", true);
 
 /* ---------- illustrations ---------- */
 function rng(seedStr) { let h = 1779033703 ^ seedStr.length; for (let i = 0; i < seedStr.length; i++) { h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; } return function () { h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; }; }
@@ -1628,6 +1735,7 @@ function drawJupiterMoons(g, w, h) {
 function pick(x, y) {
   // a tap inside the center ring opens whatever the ring is resting on
   if (hover && !mouse && Math.hypot(x - W / 2, y - H / 2) < RETICLE + 4) { showInfo(hover); return; }
+  if (pathTap(x, y)) return; // a time mark on a path: jump the sky to that time
   const hit = objectAt(x, y, 30, 6);
   if (hit) showInfo(hit); else if (!$("info").hidden) closeSheets();
 }
@@ -2278,6 +2386,8 @@ async function fetchPlanes() {
         gs: a.gs || 0, track: typeof a.track === "number" ? a.track : typeof a.true_heading === "number" ? a.true_heading : null,
         rate: typeof a.baro_rate === "number" ? a.baro_rate : typeof a.geom_rate === "number" ? a.geom_rate : null,
         posT: t - (a.seen_pos || 0) * 1000, gotT: t, emergency: a.emergency && a.emergency !== "none" ? a.emergency : "" });
+      const hist = o.hist || (o.hist = []), last = hist[hist.length - 1]; // where it has been (for its path), about 20 minutes
+      if (!last || last.lat !== a.lat || last.lon !== a.lon) { hist.push({ lat: a.lat, lon: a.lon, altFt: alt, t: o.posT }); if (hist.length > 120) hist.shift(); }
       seen.add(a.hex);
     }
     for (const [hex, o] of planes.map) if (!seen.has(hex) && t - o.gotT > 45000) planes.map.delete(hex);
@@ -2287,10 +2397,13 @@ async function fetchPlanes() {
   }
   planes.busy = false; syncLiveStatus();
 }
+function planeAt(o, sec) { // dead reckoning: straight along its track at its ground speed
+  const dist = o.gs * 0.514444 * sec, trk = (o.track || 0) * D2R;
+  return [o.lat + (o.track == null ? 0 : dist * Math.cos(trk) / 111320), o.lon + (o.track == null ? 0 : dist * Math.sin(trk) / (111320 * Math.max(0.05, Math.cos(o.lat * D2R))))];
+}
 function planeLook(o, tMs) {
   if (!o || tMs - o.gotT > 60000) return null;
-  const dt = clamp((tMs - o.posT) / 1000, 0, 60), dist = o.gs * 0.514444 * dt, trk = (o.track || 0) * D2R;
-  const lat = o.lat + (o.track == null ? 0 : dist * Math.cos(trk) / 111320), lon = o.lon + (o.track == null ? 0 : dist * Math.sin(trk) / (111320 * Math.max(0.05, Math.cos(o.lat * D2R))));
+  const [lat, lon] = planeAt(o, clamp((tMs - o.posT) / 1000, 0, 60));
   const t = topo(geoEcef(lat, lon, o.altFt * 0.0003048)); t.lat = lat; t.lon = lon;
   return t;
 }
@@ -2341,6 +2454,168 @@ function drawPlaneArt(g, w, h) {
   g.restore();
   for (const [x, y, c] of [[cx - 22, cy - 40, "255,77,77"], [cx + 18, cy + 42, "77,255,136"]]) glowDot(g, x, y, 14, c, 0.5);
 }
+
+/* ---------- paths: where the selected object travels across the sky ---------- */
+// Sun, Moon, planets, stars and deep-sky objects: their track over 24 hours (12 back, 12 ahead), a dot every hour.
+// Satellites: the whole pass they're on (or their next one), a dot every minute. Planes: the track flown so far plus 5 minutes ahead.
+let pathItem = null, pathHits = [];
+const pathStore = new Map(), rotCache = new Map();
+const itemKey = t => t.type + ":" + (t.type === "body" ? t.obj.body : t.type === "sat" ? t.obj.id : t.type === "plane" ? t.obj.hex : t.type === "cons" ? t.obj.id : t.type === "dso" ? t.obj.code : t.type === "point" ? t.obj.name : t.obj.ra + "," + t.obj.dec);
+const placeKey = () => place.lat + "," + place.lon;
+const trM = (m, v) => [m[0][0]*v[0] + m[1][0]*v[1] + m[2][0]*v[2], m[0][1]*v[0] + m[1][1]*v[1] + m[2][1]*v[2], m[0][2]*v[0] + m[1][2]*v[1] + m[2][2]*v[2]];
+function rotAt(ms) {
+  const k = ms + "|" + placeKey(); let m = rotCache.get(k);
+  if (!m) { if (rotCache.size > 1500) rotCache.clear(); m = A.Rotation_EQJ_HOR(A.MakeTime(new Date(ms)), observer).rot; rotCache.set(k, m); }
+  return m;
+}
+const hourWords = ms => new Date(ms).toLocaleTimeString([], { hour: "numeric" });
+function dayPath(item) {
+  const STEP = 600e3, t0 = Math.floor((now.getTime() - 12 * 3600e3) / STEP) * STEP, pts = [];
+  const fixed = item.type === "body" ? null : item.type === "cons" ? item.obj.center : item.obj.v;
+  if (item.type !== "body" && !fixed) return null;
+  for (let i = 0; i <= 144; i++) {
+    const ms = t0 + i * STEP; let v = fixed;
+    if (!v) { const eq = A.Equator(item.obj.body, A.MakeTime(new Date(ms)), observer, false, true); v = radecVec(eq.ra * 15, eq.dec); }
+    pts.push({ h: trM(rotAt(ms), v), t: ms, tick: new Date(ms).getMinutes() === 0 });
+  }
+  return { pts, kind: "day", note: "24 h · tap a time", jump: true, ok: ms => Math.floor((ms - 12 * 3600e3) / STEP) * STEP === t0 };
+}
+function satPath(s) {
+  const from = nowDate().getTime(), STEP = 10e3, L0 = satLook(s, new Date(from));
+  if (!L0) return null;
+  const altAt = ms => { const L = satLook(s, new Date(ms)); return L ? L.h[2] : -1; };
+  let a, b, note, current = L0.h[2] > 0;
+  if (current) { // the pass it's on now: back to where it rose, ahead to where it sets (at most 30 minutes each way)
+    a = Math.floor(from / STEP) * STEP; for (let i = 0; i < 180 && altAt(a - STEP) > 0; i++) a -= STEP;
+    b = Math.ceil(from / STEP) * STEP; for (let i = 0; i < 180 && altAt(b + STEP) > 0; i++) b += STEP;
+    a -= STEP; b += STEP;
+    note = "this pass " + fmtClock(new Date(a)) + "–" + fmtClock(new Date(b));
+  } else {
+    let ps = []; try { ps = satPasses(s, new Date(from), 36, 0); } catch (e) {}
+    const np = ps.find(p => p.visible && p.vEnd.date.getTime() - p.vStart.date.getTime() > 30e3) || ps[0];
+    if (!np) return { pts: [], kind: "pass", note: "no pass in 36 h", jump: false, ok: ms => ms >= from && ms - from < 3600e3 };
+    a = Math.floor((np.start.date.getTime() - 30e3) / STEP) * STEP; b = Math.ceil((np.end.date.getTime() + 30e3) / STEP) * STEP;
+    note = (np.visible ? "next visible pass " : "next pass ") + fmtWhen(np.start.date);
+  }
+  const pts = [];
+  for (let ms = a; ms <= b; ms += STEP) { const L = satLook(s, new Date(ms)); if (L) pts.push({ h: L.h, t: ms, tick: ms % 60000 === 0, lbl: fmtClock(new Date(ms)).replace(/\s?[AP]M$/i, "") }); }
+  return { pts, kind: "pass", note, jump: true, current, ok: ms => ms >= (current ? a : from) && ms <= b };
+}
+function planePath(o) {
+  const t = Date.now(), pts = [];
+  for (const q of o.hist || []) pts.push({ h: topo(geoEcef(q.lat, q.lon, q.altFt * 0.0003048)).h, t: q.t });
+  const L = planeLook(o, t);
+  if (L) {
+    const sec0 = clamp((t - o.posT) / 1000, 0, 60);
+    pts.push({ h: L.h, t });
+    if (o.track != null && o.gs > 30) for (let k = 1; k <= 30; k++) { // straight ahead for 5 minutes
+      const [lat, lon] = planeAt(o, sec0 + k * 10);
+      pts.push({ h: topo(geoEcef(lat, lon, o.altFt * 0.0003048)).h, t: t + k * 10e3, tick: k % 6 === 0, lbl: "+" + k / 6 + " min" });
+    }
+  }
+  return { pts, kind: "track", note: "track + next 5 min", jump: false, ok: ms => Date.now() - t < 3000 };
+}
+function getPath(item) {
+  const k = itemKey(item), ms = item.type === "plane" ? Date.now() : item.type === "sat" ? nowDate().getTime() : now.getTime();
+  let p = pathStore.get(k);
+  if (p && p.place === placeKey() && (item.type === "body" || p.obj === item.obj) && p.ok(ms)) return p;
+  try { p = item.type === "sat" ? (SATLIB ? satPath(item.obj) : null) : item.type === "plane" ? planePath(item.obj) : dayPath(item); } catch (e) { p = null; }
+  if (!p) return null;
+  p.place = placeKey(); p.obj = item.obj;
+  if (pathStore.size > 8) pathStore.clear();
+  pathStore.set(k, p);
+  return p;
+}
+function pathFocus(item) { // a good spot to look at: the object itself if it's up, else the highest point still to come
+  const p = getPath(item), v = targetVec(item);
+  if (v && v[2] > 0 && !(item.type === "sat" && p && !p.current)) return v;
+  if (!p || !p.pts.length) return v;
+  const nowMs = item.type === "sat" ? nowDate().getTime() : now.getTime();
+  let best = null; for (const q of p.pts) if (q.t >= nowMs - 60e3 && (!best || q.h[2] > best.h[2])) best = q;
+  return best && (best.h[2] > 0.17 || item.type === "sat") ? best.h : v || (best && best.h);
+}
+function drawPath(B, item, pinned) {
+  if (item.type === "plane" && (!layers.planes || !planeLive())) return;
+  if (item.type === "sat" && !layers.sats) return;
+  const p = getPath(item); if (!p || p.pts.length < 2) return;
+  const pts = p.pts, see = seeThrough(), maxL = Math.max(W, H) * 1.2;
+  const nowMs = item.type === "plane" ? Date.now() : item.type === "sat" ? nowDate().getTime() : now.getTime();
+  const proj = pts.map(q => project(B, q.h));
+  // group the line into runs that share a style: ahead / behind, above / below the horizon
+  const styleOf = i => {
+    const below = pts[i].h[2] + pts[i + 1].h[2] < 0;
+    if (below && !see) return null;
+    return (pts[i + 1].t <= nowMs ? "past" : (item.type === "plane" ? "ahead" : "future")) + (below ? "-low" : "");
+  };
+  const runs = []; let cur = null;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = proj[i], b = proj[i + 1], st = styleOf(i);
+    if (!a || !b || !st || Math.hypot(b[0] - a[0], b[1] - a[1]) > maxL) { cur = null; continue; }
+    if (!cur || cur.st !== st) { cur = { st, xy: [a] }; runs.push(cur); }
+    cur.xy.push(b);
+  }
+  const k = pinned ? 1 : 0.8;
+  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
+  for (const r of runs) {
+    const low = r.st.endsWith("-low"), past = r.st.startsWith("past"), ahead = r.st.startsWith("ahead");
+    ctx.beginPath(); r.xy.forEach((q, j) => j ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]));
+    ctx.setLineDash([]); ctx.strokeStyle = "rgba(3,5,12,0.35)"; ctx.lineWidth = 4; ctx.stroke();
+    ctx.setLineDash(low || ahead ? [4, 5] : []);
+    ctx.strokeStyle = `rgba(242,196,109,${(low ? 0.3 : past ? 0.42 : 0.85) * k})`;
+    ctx.lineWidth = past || low ? 1.4 : 2; ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  // time marks
+  ctx.font = "500 11px " + FONT_DATA; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineWidth = 3;
+  let lastLbl = null;
+  for (let i = 0; i < pts.length; i++) {
+    const q = pts[i], pp = proj[i];
+    if (!q.tick || !onScreen(pp, 0) || Math.abs(q.t - nowMs) < (p.kind === "pass" ? 15e3 : 120e3)) continue;
+    const low = q.h[2] < 0; if (low && !see) continue;
+    const a = 0.95 * (low ? 0.45 : 1) * k;
+    ctx.fillStyle = `rgba(242,196,109,${a})`; ctx.strokeStyle = "rgba(3,5,12,0.7)";
+    ctx.beginPath(); ctx.arc(pp[0], pp[1], 3, 0, 7); ctx.lineWidth = 2; ctx.stroke(); ctx.fill(); ctx.lineWidth = 3;
+    if (lastLbl && Math.hypot(pp[0] - lastLbl[0], pp[1] - lastLbl[1]) < 44) continue;
+    const pa = proj[Math.max(0, i - 1)], pb = proj[Math.min(pts.length - 1, i + 1)];
+    let nx = 0, ny = -1;
+    if (pa && pb) { const dx = pb[0] - pa[0], dy = pb[1] - pa[1], L = Math.hypot(dx, dy); if (L > 0.5) { nx = -dy / L; ny = dx / L; if (ny > 0) { nx = -nx; ny = -ny; } } }
+    const lx = pp[0] + nx * 13, ly = pp[1] + ny * 13, txt = q.lbl || hourWords(q.t);
+    ctx.strokeText(txt, lx, ly); ctx.fillText(txt, lx, ly);
+    lastLbl = pp;
+    if (p.jump) pathHits.push({ x: pp[0], y: pp[1], lx, ly, t: q.t, txt });
+  }
+  ctx.restore();
+}
+function syncPathChip() {
+  const on = !!pathItem; $("pathChip").hidden = !on;
+  document.body.classList.toggle("chips2", on && !!target);
+  if (!on) return;
+  const p = getPath(pathItem);
+  $("pathName").textContent = targetName(pathItem) + " path";
+  $("pathWhen").textContent = p ? "· " + p.note : "";
+}
+function setPath(item) {
+  pathItem = item; syncPathChip();
+  if (!item) return;
+  const p = getPath(item);
+  if (p && p.kind === "pass" && !p.pts.length) toast(targetName(item) + " doesn't cross your sky in the next 36 hours.", 5000);
+  if (!motionOn) { // bring the path into view (keep the zoom wide enough to follow it)
+    const v = pathFocus(item);
+    if (v) { const [az, alt] = toAzAlt(v); slew = { a0: view.az, l0: view.alt, f0: view.fov, da: wrap180(az - view.az), dl: clamp(alt, -20, 75) - view.alt, df: camOn ? 0 : Math.max(view.fov, item.type === "plane" ? 70 : 100) - view.fov, t0: performance.now(), dur: 900 }; }
+  }
+}
+function pathTap(x, y) {
+  for (const h of pathHits) {
+    if (Math.hypot(h.x - x, h.y - y) < 13 || Math.hypot(h.lx - x, h.ly - y) < 15) {
+      playing = false; setOffset(h.t - Date.now());
+      toast("Sky at " + fmtWhen(new Date(h.t)) + ". Tap the clock, then Now, to come back.", 4500);
+      return true;
+    }
+  }
+  return false;
+}
+$("pathClear").onclick = () => setPath(null);
+$("pathOpen").onclick = () => { if (pathItem) showInfo(pathItem); };
 
 /* ---------- weather ---------- */
 const wx = { data: null, t: 0, lat: null, lon: null, status: "off", busy: false };
@@ -2519,6 +2794,7 @@ function liveTick(tNow) {
 }
 function placeChanged() {
   obsCache = null; sunAltCache.clear(); sat.scanT = 0; for (const s of sat.list) s.trail = null;
+  pathStore.clear(); rotCache.clear(); syncPathChip();
   planes.map.clear(); planes.list = []; planes.lastFetch = -1e9;
   loadWeather(); renderWxBadge();
 }

@@ -1,6 +1,7 @@
 // Night Sky Finder offline support: keeps the app and its data on the phone so it opens with no signal.
 // Bump CACHE on every release (night-sky-v5, v6, ...) so phones pick up the update.
-const CACHE = "night-sky-v5";
+const CACHE = "night-sky-v6";
+const PHOTOS = "night-sky-photos"; // photos from Wikimedia, kept for offline use (the newest 120)
 const SHELL = ["./", "index.html", "astronomy.browser.min.js", "satellite.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "guide.html", "screen-map.png"];
 // Older versions of the app (night-sky-2, cache night-sky-v4 and earlier) live on the same github.io address
 // and share this cache storage, so only clear out this version's own old caches (v5 and up).
@@ -27,11 +28,18 @@ self.addEventListener("fetch", e => {
     e.respondWith(caches.match(req, { cacheName: CACHE }).then(hit => hit || fetch(req).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r; })));
     return;
   }
+  if (url.hostname.endsWith("wikimedia.org") && /\.(jpe?g|png|gif|webp)$/i.test(url.pathname)) {
+    e.respondWith(caches.open(PHOTOS).then(c => c.match(req).then(hit => hit || fetch(req).then(r => {
+      if (r.ok || r.type === "opaque") c.put(req, r.clone()).then(() => c.keys()).then(keys => Promise.all(keys.slice(0, Math.max(0, keys.length - 120)).map(k => c.delete(k)))).catch(() => {});
+      return r;
+    }))));
+    return;
+  }
   if (url.hostname.endsWith("fonts.googleapis.com") || url.hostname.endsWith("fonts.gstatic.com")) {
     e.respondWith(caches.open(CACHE).then(c => c.match(req).then(hit => {
       const net = fetch(req).then(r => { c.put(req, r.clone()); return r; }).catch(() => hit);
       return hit || net;
     })));
   }
-  // satellites, weather and planes go straight to the network; the app keeps its own saved copies
+  // satellites, weather, planes and Wikipedia lookups go straight to the network; the app keeps its own saved copies
 });
